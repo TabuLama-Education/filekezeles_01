@@ -76,6 +76,4 @@ A Python fájlkezelésének **4 alaplépése**:
 4. **Hibakezelés** (opcionális) → `try-except` blokkal, ha pl. a fájl nem létezik
     
 
----
-
-Szeretnéd, hogy készítsek ehhez egy **gyakorlófeladatsort** (pl. olvasás, írás, soronkénti feldolgozás stb.) is 10. osztályos szinten?
+-
