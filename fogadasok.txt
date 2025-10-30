@@ -1,0 +1,5 @@
+Anna;Ötöslottó;1500;0
+Béla;Kenó;800;1200
+Csaba;Sportfogadás;2000;5800
+Dóra;Puttó;500;0
+Erika;Skandináv lottó;1000;10000
