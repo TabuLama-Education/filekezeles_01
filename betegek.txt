@@ -1,0 +1,4 @@
+Kovács Anna;influenza;25;12000
+Nagy Béla;tüdőgyulladás;42;18000
+Tóth Eszter;megfázás;31;5000
+Horváth Márton;allergia;19;8000
