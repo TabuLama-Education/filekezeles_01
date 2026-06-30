@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NR rendelés ciklus animáció</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel2: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #38bdf8;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --warn: #f59e0b;
+      --line: #334155;
+      --code: #020617;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #111827);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1, h2, h3, p {
+      margin-top: 0;
+    }
+
+    .wrapper {
+      max-width: 1250px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    .hero h1 {
+      font-size: 30px;
+      margin-bottom: 8px;
+    }
+
+    .hero p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 0;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      align-items: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 11px 16px;
+      background: var(--accent);
+      color: #001018;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.15s, filter 0.15s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    button.secondary {
+      background: #334155;
+      color: var(--text);
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="range"] {
+      width: 160px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(17, 24, 39, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+    .days {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 8px;
+    }
+
+    .day {
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0b1220;
+      color: var(--muted);
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .day .num {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .day .status {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .day.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), 0 0 24px rgba(56, 189, 248, 0.25);
+      transform: scale(1.05);
+    }
+
+    .day.good {
+      background: rgba(34, 197, 94, 0.16);
+      border-color: rgba(34, 197, 94, 0.65);
+    }
+
+    .day.bad {
+      background: rgba(239, 68, 68, 0.16);
+      border-color: rgba(239, 68, 68, 0.65);
+    }
+
+    .day.pending {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.55);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: #0b1220;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px;
+      min-height: 85px;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      font-size: 24px;
+      color: var(--text);
+    }
+
+    .message {
+      border-radius: 16px;
+      padding: 16px;
+      background: #0b1220;
+      border: 1px solid var(--line);
+      margin-top: 16px;
+      line-height: 1.5;
+      min-height: 72px;
+    }
+
+    .message.goodmsg {
+      border-color: rgba(34, 197, 94, 0.65);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .message.badmsg {
+      border-color: rgba(239, 68, 68, 0.65);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #0b1220;
+      color: var(--muted);
+      font-weight: normal;
+    }
+
+    tr {
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    tr.checking {
+      background: rgba(56, 189, 248, 0.18);
+      outline: 2px solid rgba(56, 189, 248, 0.35);
+    }
+
+    tr.match {
+      background: rgba(34, 197, 94, 0.18);
+    }
+
+    tr.no-match {
+      background: rgba(239, 68, 68, 0.10);
+    }
+
+    .code {
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      margin-top: 18px;
+    }
+
+    .code-line {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      padding: 7px 12px;
+      color: #cbd5e1;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(51,65,85,0.5);
+      transition: background 0.2s;
+    }
+
+    .code-line:last-child {
+      border-bottom: none;
+    }
+
+    .code-line .ln {
+      color: #64748b;
+      text-align: right;
+    }
+
+    .code-line.active-code {
+      background: rgba(56, 189, 248, 0.16);
+      color: #ffffff;
+    }
+
+    .explain {
+      color: var(--muted);
+      line-height: 1.55;
+      margin-top: 12px;
+      margin-bottom: 0;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.active { background: var(--accent); }
+    .dot.good { background: var(--good); }
+    .dot.bad { background: var(--bad); }
+    .dot.pending { background: var(--warn); }
+
+    textarea {
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: var(--text);
+      padding: 12px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      outline: none;
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 950px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .days {
+        grid-template-columns: repeat(5, 1fr);
+      }
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <section class="hero">
+      <h1>4. feladat – NR rendelés keresése napokra bontva</h1>
+      <p>
+        Ez az animáció azt mutatja meg, hogyan működik a Python-kód: végigmegy az 1–30. napokon,
+        minden napnál átnézi az összes rendelést, és megszámolja azokat a napokat, amikor nem volt
+        <strong>NR</strong> típusú rendelés.
+      </p>
+      <div class="controls">
+        <button id="startBtn">Indítás</button>
+        <button id="pauseBtn" class="secondary">Szünet</button>
+        <button id="resetBtn" class="secondary">Újrakezdés</button>
+        <label>
+          Sebesség:
+          <input id="speed" type="range" min="150" max="1200" value="550" />
+        </label>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Napok</h2>
+        <div class="stats">
+          <div class="stat">
+            <span>Aktuális nap</span>
+            <strong id="currentDay">-</strong>
+          </div>
+          <div class="stat">
+            <span>volt_nr_rendeles</span>
+            <strong id="hasNR">False</strong>
+          </div>
+          <div class="stat">
+            <span>nr_nelkul_napok</span>
+            <strong id="missingCount">0</strong>
+          </div>
+        </div>
+
+        <div id="days" class="days"></div>
+
+        <div class="legend">
+          <span class="pill"><span class="dot active"></span>éppen vizsgált nap</span>
+          <span class="pill"><span class="dot good"></span>volt NR rendelés</span>
+          <span class="pill"><span class="dot bad"></span>nem volt NR rendelés</span>
+          <span class="pill"><span class="dot pending"></span>még vizsgálat alatt</span>
+        </div>
+
+        <div id="message" class="message">
+          Nyomd meg az <strong>Indítás</strong> gombot. A program ugyanazt fogja végigjátszani, mint a Python-kód.
+        </div>
+
+        <div class="code">
+          <div class="code-line" data-line="1"><span class="ln">1</span><span>nr_nelkul_napok = 0</span></div>
+          <div class="code-line" data-line="2"><span class="ln">2</span><span>for nap in range(1, 31):</span></div>
+          <div class="code-line" data-line="3"><span class="ln">3</span><span>&nbsp;&nbsp;&nbsp;&nbsp;volt_nr_rendeles = False</span></div>
+          <div class="code-line" data-line="4"><span class="ln">4</span><span>&nbsp;&nbsp;&nbsp;&nbsp;for rendeles in rendelesek:</span></div>
+          <div class="code-line" data-line="5"><span class="ln">5</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if rendeles[0] == nap and rendeles[1] == "NR":</span></div>
+          <div class="code-line" data-line="6"><span class="ln">6</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;volt_nr_rendeles = True</span></div>
+          <div class="code-line" data-line="7"><span class="ln">7</span><span>&nbsp;&nbsp;&nbsp;&nbsp;if volt_nr_rendeles == False:</span></div>
+          <div class="code-line" data-line="8"><span class="ln">8</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nr_nelkul_napok += 1</span></div>
+          <div class="code-line" data-line="9"><span class="ln">9</span><span>if nr_nelkul_napok == 0:</span></div>
+          <div class="code-line" data-line="10"><span class="ln">10</span><span>&nbsp;&nbsp;&nbsp;&nbsp;print("Minden nap volt rendelés...")</span></div>
+          <div class="code-line" data-line="11"><span class="ln">11</span><span>else:</span></div>
+          <div class="code-line" data-line="12"><span class="ln">12</span><span>&nbsp;&nbsp;&nbsp;&nbsp;print(f"{nr_nelkul_napok} nap nem volt...")</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Rendelések</h2>
+        <p class="explain">
+          A belső ciklus ezt a táblázatot nézi végig újra és újra minden egyes napnál.
+          A Pythonban ez a rész: <strong>for rendeles in rendelesek</strong>.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>rendeles[0]</th>
+              <th>rendeles[1]</th>
+              <th>Jelentés</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTable"></tbody>
+        </table>
+
+        <h3 style="margin-top: 18px;">Mintaadatok szerkesztése</h3>
+        <p class="tiny">
+          Egy sor = egy rendelés. Formátum: <strong>nap;városkód</strong>. Például: <strong>5;NR</strong>.
+          Átírhatod, majd nyomd meg az <strong>Adatok betöltése</strong> gombot.
+        </p>
+        <textarea id="dataInput"></textarea>
+        <div class="controls" style="margin-top: 10px;">
+          <button id="loadBtn" class="secondary">Adatok betöltése</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    let rendelesek = [
+      [1, "NR"],
+      [1, "BP"],
+      [2, "SZ"],
+      [3, "NR"],
+      [4, "DE"],
+      [5, "NR"],
+      [7, "BP"],
+      [8, "NR"],
+      [10, "NR"],
+      [11, "SZ"],
+      [12, "NR"],
+      [15, "BP"],
+      [16, "NR"],
+      [18, "NR"],
+      [20, "DE"],
+      [21, "NR"],
+      [23, "NR"],
+      [25, "BP"],
+      [27, "NR"],
+      [30, "NR"]
+    ];
+
+    let running = false;
+    let paused = false;
+    let stopRequested = false;
+    let nrNelkulNapok = 0;
+
+    const daysDiv = document.getElementById("days");
+    const ordersTable = document.getElementById("ordersTable");
+    const currentDay = document.getElementById("currentDay");
+    const hasNR = document.getElementById("hasNR");
+    const missingCount = document.getElementById("missingCount");
+    const message = document.getElementById("message");
+    const speed = document.getElementById("speed");
+    const dataInput = document.getElementById("dataInput");
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function waitWhilePaused() {
+      while (paused && !stopRequested) {
+        await sleep(100);
+      }
+    }
+
+    function delay() {
+      return Number(speed.max) + Number(speed.min) - Number(speed.value);
+    }
+
+    function setCodeLine(line) {
+      document.querySelectorAll(".code-line").forEach(el => el.classList.remove("active-code"));
+      const active = document.querySelector(`[data-line="${line}"]`);
+      if (active) active.classList.add("active-code");
+    }
+
+    function createDays() {
+      daysDiv.innerHTML = "";
+      for (let i = 1; i <= 30; i++) {
+        const d = document.createElement("div");
+        d.className = "day";
+        d.id = "day-" + i;
+        d.innerHTML = `<div class="num">${i}</div><div class="status">vár</div>`;
+        daysDiv.appendChild(d);
+      }
+    }
+
+    function renderOrders() {
+      ordersTable.innerHTML = "";
+      rendelesek.forEach((r, index) => {
+        const tr = document.createElement("tr");
+        tr.id = "order-" + index;
+        tr.innerHTML = `
+          <td>${index}</td>
+          <td>${r[0]}. nap</td>
+          <td>${r[1]}</td>
+          <td>${r[1] === "NR" ? "nem érintett városból jött rendelés" : "másik városból jött rendelés"}</td>
+        `;
+        ordersTable.appendChild(tr);
+      });
+    }
+
+    function clearOrderHighlights() {
+      document.querySelectorAll("tbody tr").forEach(row => {
+        row.classList.remove("checking", "match", "no-match");
+      });
+    }
+
+    function resetAnimation() {
+      stopRequested = true;
+      running = false;
+      paused = false;
+      nrNelkulNapok = 0;
+      currentDay.textContent = "-";
+      hasNR.textContent = "False";
+      missingCount.textContent = "0";
+      message.className = "message";
+      message.innerHTML = "Nyomd meg az <strong>Indítás</strong> gombot. A program ugyanazt fogja végigjátszani, mint a Python-kód.";
+      setCodeLine(null);
+      clearOrderHighlights();
+      createDays();
+    }
+
+    async function animate() {
+      if (running) return;
+      resetAnimation();
+      stopRequested = false;
+      running = true;
+      setCodeLine(1);
+      message.innerHTML = "A változó induló értéke: <strong>nr_nelkul_napok = 0</strong>.";
+      await sleep(delay());
+
+      for (let nap = 1; nap <= 30; nap++) {
+        await waitWhilePaused();
+        if (stopRequested) return;
+
+        setCodeLine(2);
+        currentDay.textContent = nap;
+        hasNR.textContent = "False";
+        const dayBox = document.getElementById("day-" + nap);
+        dayBox.className = "day active pending";
+        dayBox.querySelector(".status").textContent = "vizsgálat";
+        message.innerHTML = `Külső ciklus: most a <strong>${nap}. napot</strong> vizsgáljuk.`;
+        await sleep(delay());
+
+        await waitWhilePaused();
+        if (stopRequested) return;
+
+        setCodeLine(3);
+        let voltNrRendeles = false;
+        hasNR.textContent = "False";
+        message.innerHTML = `A <strong>${nap}. napnál</strong> először feltételezzük, hogy még nem találtunk NR rendelést: <strong>volt_nr_rendeles = False</strong>.`;
+        await sleep(delay());
+
+        for (let i = 0; i < rendelesek.length; i++) {
+          await waitWhilePaused();
+          if (stopRequested) return;
+
+          clearOrderHighlights();
+          const row = document.getElementById("order-" + i);
+          row.classList.add("checking");
+          row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+
+          setCodeLine(4);
+          message.innerHTML = `Belső ciklus: megnézzük a(z) <strong>${i}. indexű</strong> rendelést.`;
+          await sleep(delay());
+
+          await waitWhilePaused();
+          if (stopRequested) return;
+
+          setCodeLine(5);
+          const rendeles = rendelesek[i];
+          const egyezik = rendeles[0] === nap && rendeles[1] === "NR";
+
+          if (egyezik) {
+            row.classList.remove("checking");
+            row.classList.add("match");
+            message.innerHTML = `Találat! A rendelés napja <strong>${rendeles[0]}</strong>, a kódja <strong>${rendeles[1]}</strong>, tehát ez NR rendelés a <strong>${nap}. napon</strong>.`;
+            await sleep(delay());
+
+            setCodeLine(6);
+            voltNrRendeles = true;
+            hasNR.textContent = "True";
+            message.innerHTML = `Ezért a változó értéke átáll: <strong>volt_nr_rendeles = True</strong>.`;
+            await sleep(delay());
+          } else {
+            row.classList.remove("checking");
+            row.classList.add("no-match");
+            message.innerHTML = `Nincs találat ennél a rendelésnél: <strong>${rendeles[0]}. nap, ${rendeles[1]}</strong>. A feltétel most hamis.`;
+            await sleep(Math.max(120, delay() * 0.65));
+          }
+        }
+
+        await waitWhilePaused();
+        if (stopRequested) return;
+
+        clearOrderHighlights();
+        setCodeLine(7);
+        message.innerHTML = `Vége a belső ciklusnak. Most eldöntjük: maradt-e <strong>volt_nr_rendeles == False</strong>?`;
+        await sleep(delay());
+
+        if (voltNrRendeles === false) {
+          await waitWhilePaused();
+          if (stopRequested) return;
+
+          setCodeLine(8);
+          nrNelkulNapok++;
+          missingCount.textContent = nrNelkulNapok;
+          dayBox.className = "day bad";
+          dayBox.querySelector(".status").textContent = "nincs NR";
+          message.innerHTML = `A <strong>${nap}. napon</strong> nem volt NR rendelés, ezért növeljük a számlálót: <strong>nr_nelkul_napok = ${nrNelkulNapok}</strong>.`;
+          await sleep(delay());
+        } else {
+          dayBox.className = "day good";
+          dayBox.querySelector(".status").textContent = "volt NR";
+          message.innerHTML = `A <strong>${nap}. napon</strong> volt NR rendelés, ezért a számlálót nem növeljük.`;
+          await sleep(delay());
+        }
+      }
+
+      await waitWhilePaused();
+      if (stopRequested) return;
+
+      setCodeLine(9);
+      message.innerHTML = `A 30 nap vizsgálata kész. Most a végső if következik: <strong>nr_nelkul_napok == 0</strong>?`;
+      await sleep(delay());
+
+      if (nrNelkulNapok === 0) {
+        setCodeLine(10);
+        message.className = "message goodmsg";
+        message.innerHTML = "<strong>Végső kiírás:</strong><br>Minden nap volt rendelés a reklámban nem érintett városból.";
+      } else {
+        setCodeLine(12);
+        message.className = "message badmsg";
+        message.innerHTML = `<strong>Végső kiírás:</strong><br>${nrNelkulNapok} nap nem volt a reklámban nem érintett városból rendelés.`;
+      }
+
+      running = false;
+    }
+
+    function loadDataFromTextarea() {
+      const lines = dataInput.value.split("\n").map(x => x.trim()).filter(x => x.length > 0);
+      const ujAdatok = [];
+
+      for (const line of lines) {
+        const parts = line.split(";");
+        if (parts.length !== 2) continue;
+        const nap = Number(parts[0]);
+        const kod = parts[1].trim().toUpperCase();
+        if (!Number.isNaN(nap) && nap >= 1 && nap <= 30 && kod.length > 0) {
+          ujAdatok.push([nap, kod]);
+        }
+      }
+
+      rendelesek = ujAdatok;
+      resetAnimation();
+      renderOrders();
+      message.innerHTML = `Az adatok betöltve. Összesen <strong>${rendelesek.length}</strong> rendelés van a listában.`;
+    }
+
+    function fillTextarea() {
+      dataInput.value = rendelesek.map(r => `${r[0]};${r[1]}`).join("\n");
+    }
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      if (paused && running) {
+        paused = false;
+      } else {
+        animate();
+      }
+    });
+
+    document.getElementById("pauseBtn").addEventListener("click", () => {
+      if (!running) return;
+      paused = !paused;
+      document.getElementById("pauseBtn").textContent = paused ? "Folytatás" : "Szünet";
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      resetAnimation();
+      document.getElementById("pauseBtn").textContent = "Szünet";
+    });
+
+    document.getElementById("loadBtn").addEventListener("click", () => {
+      loadDataFromTextarea();
+      document.getElementById("pauseBtn").textContent = "Szünet";
+    });
+
+    createDays();
+    renderOrders();
+    fillTextarea();
+  </script>
+</body>
+</html>
